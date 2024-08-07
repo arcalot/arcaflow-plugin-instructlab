@@ -1,17 +1,18 @@
 [tool.poetry]
-name = "arcaflow-plugin-template-python"
+name = "arcaflow-plugin-instructlab"
 version = "0.1.0"
 description = ""
 authors = ["Arcalot"]
 license = "Apache-2.0+GPL-2.0-only"
 
 packages = [
-   { include="template_python_plugin.py", from="./arcaflow_plugin_template_python"  },
+   { include="instructlab_plugin.py", from="./arcaflow_plugin_instructlab"  },
 ]
 
 [tool.poetry.dependencies]
-python = "^3.9"
+python = "^3.10"
 arcaflow-plugin-sdk = "^0.14.0"
+instructlab-training = "^0.3.1"
 
 [tool.poetry.dev-dependencies]
 docformatter = "^1.5.0"
