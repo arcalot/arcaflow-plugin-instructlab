@@ -2,14 +2,14 @@
 ARG package=arcaflow_plugin_instructlab
 
 # Base that supports InstructLab
-FROM nvcr.io/nvidia/cuda:12.4.1-devel-ubi9 as os_base
+FROM nvcr.io/nvidia/cuda:12.5.1-cudnn-devel-ubi9 as os_base
 RUN dnf -y install python3.11-pip rust cargo && ln -s /usr/bin/python3.11 /usr/bin/python
 RUN dnf install -y python3.11 python3.11-devel git python3-pip make automake gcc gcc-c++
 RUN python3.11 -m ensurepip
 RUN rpm -ivh https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 RUN dnf config-manager --add-repo https://developer.download.nvidia.com/compute/cuda/repos/rhel9/x86_64/cuda-rhel9.repo && dnf repolist && dnf config-manager --set-enabled cuda-rhel9-x86_64 && dnf config-manager --set-enabled cuda && dnf config-manager --set-enabled epel && dnf update -y
 RUN dnf install -y libcudnn8 nvidia-driver-NVML nvidia-driver-cuda-libs
-RUN python3.11 -m pip install --force-reinstall nvidia-cuda-nvcc-cu12
+RUN python3.11 -m pip install --force-reinstall nvidia-cuda-nvcc-cu12 nvidia-cudnn-cu12
 RUN export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64" \
     && export CUDA_HOME=/usr/local/cuda \
     && export PATH="/usr/local/cuda/bin:$PATH" \
@@ -18,7 +18,7 @@ RUN export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/usr/local/cuda/lib64:/usr/local/cu
 WORKDIR /app
 
 FROM os_base AS base
-RUN dnf -y install gcc-c++ python3.11-devel openssl-devel \
+RUN dnf -y install gcc-c++ openssl-devel \
  && dnf clean all
 
 # Setup poetry
@@ -40,8 +40,8 @@ COPY poetry.lock /app/
 COPY pyproject.toml /app/
 
 # Convert the dependencies from poetry to a static requirements.txt file
-RUN python -m poetry install --without dev --no-root \
- && python -m poetry export -f requirements.txt --output requirements.txt --without-hashes
+RUN python3.11 -m poetry install --without dev --no-root \
+ && python3.11 -m poetry export -f requirements.txt --output requirements.txt --without-hashes
 
 COPY ${package}/ /app/${package}
 COPY tests /app/${package}/tests
@@ -49,10 +49,13 @@ COPY tests /app/${package}/tests
 ENV PYTHONPATH /app/${package}
 WORKDIR /app/${package}
 
-# Run tests and return coverage analysis
-RUN python -m coverage run tests/test_${package}.py \
- && python -m coverage html -d /htmlcov --omit=/usr/local/*
+# Make pytorch work with CUDA:
+RUN python3.11 -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124
+RUN python3.11 -m pip install torch==2.4.0
 
+# Run tests and return coverage analysis
+RUN python3.11 -m coverage run tests/test_${package}.py \
+ && python3.11 -m coverage html -d /htmlcov --omit=/usr/local/*
 
 # STAGE 2 -- Build final plugin image
 FROM base
@@ -65,7 +68,7 @@ COPY README.md /app/
 COPY ${package}/ /app/${package}
 
 # Install all plugin dependencies from the generated requirements.txt file
-RUN python -m pip install -r requirements.txt
+RUN python3.11 -m pip install -r requirements.txt
 
 WORKDIR /app/${package}
 

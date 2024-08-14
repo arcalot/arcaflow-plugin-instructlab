@@ -1,0 +1,10 @@
+pytorch_args:
+  nnodes: 1
+  nproc_per_node: 1
+training_args:
+  model_path: "/home/models/granite-7b-lab"
+  data_path: "/home/data/training/knowledge_data.jsonl"
+  cpu_offload_enabled: true
+  cpu_offload_settings:
+    pin_memory: false
+    optimizer_ratio: 1.0
