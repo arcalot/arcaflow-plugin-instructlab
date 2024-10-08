@@ -1,4 +1,8 @@
-# Python Plugin InstructLab
+
+> [!CAUTION]
+> This repository is only a proof of concept. It is not supported.
+
+# Python Plugin InstructLab POC
 
 This plugin can run instructlab standalone, or as a part of a workflow.
 
